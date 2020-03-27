@@ -19,8 +19,8 @@ La page officielle du gouvernement français pour le coronavirus est un bon endr
 
 De cette façon, vous pouvez `diff` (différencier) le contenu lorsqu'il change et vous n'avez pas à relire la totalité.
 
-Un cron-job ou l'ajout d'actions `git` au script est possible si vous souhaitez contribuer. C'est une solution rapide et moyennement sale à un problème qui, espérons-le, finira plus tôt que tard.
+Un cron-job ou l'ajout d'actions `git` au script est possible si vous souhaitez contribuer. C'est une solution rapide et faîte sur le tas à un problème qui, espérons-le, finira plus tôt que tard.
 
-Resté en bonne santé tous.
+Restez tous en bonne santé.
 
-Instruction: il suffit de cloner le dépôt et d'exécuter le script `fetch.sh` dans le dossier. Vous pouvez également faire un cron job pour qu'il le fasse régulièrement (toutes les 6h par exemple).
+Instruction: il suffit de cloner le "repo" et d'exécuter le script `fetch.sh` dans le dossier. Vous pouvez également faire un cron job pour qu'il le fasse régulièrement (toutes les 6h par exemple).
