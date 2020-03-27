@@ -15,8 +15,6 @@ Instruction: Just clone the repo and run the `fetch.sh` script from within. You 
 ### FR
 
 
-Instruction: 
-
 La page officielle du gouvernement français pour le coronavirus est un bon endroit pour se tenir informé mais (a) c'est un texte long et (b) n'indique pas ce qui a changé exactement ... J'ai donc écrit ce petit script shell (BASH) pour aller chercher la page et les 2 formulaires nécessaires pour sortir. Le script compare simplement le HTML et la version txt des formulaires avec ceux précédemment téléchargés et signale s'il y a des changements entre les deux versions.
 
 De cette façon, vous pouvez `diff` (différencier) le contenu lorsqu'il change et vous n'avez pas à relire la totalité.
