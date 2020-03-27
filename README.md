@@ -2,11 +2,11 @@
  
 ### ENG
 
-The [official french gouvernement page](https://www.gouvernement.fr/info-coronavirus) for the coronavirus is a good place to keep informed but (a) it's long and (b) doesn't indiquate what exactly has changed... So I wrote this little shell script (BASH) to fetch the page and the 2 forms that are required when going outside lest you end up with a rather hefty fine. The script just compares the HTML and the txt version of the forms with any previously downloaded ones and signals if there are any changes between the two versions.
+The [official french governement page](https://www.gouvernement.fr/info-coronavirus) for the coronavirus is a good place to keep informed but (a) it's long and (b) doesn't indiquate what exactly has changed... So I wrote this little shell script (BASH) to fetch the page and the 2 forms that are required when going outside lest you end up with a rather hefty fine. The script just compares the HTML and the txt version of the forms with any previously downloaded ones and signals if there are any changes between the two versions.
 
 This way you can `diff` the content when it does actually change and you don't have to re-read the entire thing over.
 
-A cron-job or adding version control actions to the script is possible if you care to contribute. It's a quick and midly dirty socultion to a problem that will hopefully come to pass sooner rather than later.
+A cron-job or adding version control actions to the script is possible if you care to contribute. It's a quick and mildly dirty solution to a problem that will hopefully come to pass sooner rather than later.
 
 Stay safe people.
 
