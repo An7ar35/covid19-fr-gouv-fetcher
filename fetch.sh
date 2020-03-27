@@ -1,0 +1,293 @@
+#!/bin/bash
+#************************************************#
+#                   fetch.sh                     #
+#              written by An7ar35                #
+#                 27 March 2020                  #
+#                                                #
+#   Fetches the Covid-19 information page and    #
+#   required forms from the French government    #
+#   website and checks if there are any changes  #
+#   on the text based files.                     #
+#************************************************#
+
+
+# Instruction: Run from the folder you want to store all the changes to
+#              Use 'diff' to check the changes between versions
+
+# Dependencies: 'date', 'wget', 'mapfile' (bash 4+), readarray (bash 4+), 'declare', 'sha256sum', 'awk', 'local' (bash 4+)
+
+date=`date +'%Y-%m-%d'`
+time=`date +'%H%M%S'`
+info_page_address="https://www.gouvernement.fr/info-coronavirus"
+document_domain_append="https://www.gouvernement.fr"
+info_page_filename="info-coronavirus_${date}_${time}.html"
+doc_attestation_base_filename="attestation-deplacement-fr_${date}_${time}"
+doc_justificatif_base_filename="justificatif-professionnel-fr_${date}_${time}"
+
+
+#-
+# Removes file from disk
+# @arg1 file path
+#-
+cleanup() {
+    echo "[INFO] Cleaning up ${1} from disk..."
+    rm ${1}
+}
+
+#-
+# Downloads a set of file links
+# @arg1 collection of domainless paths
+# @arg2 base filename to use for naming downloaded files
+# @return 
+#-
+download() {
+    local -n paths=$1 #passed by reference
+    error="0"
+    
+    for i in "${paths[@]}"; do
+        if [[ ! -f "$i" ]]; then
+            wget_retval=""
+            remote="${document_domain_append}${i}"
+            echo "Téléchargement: ${remote}"
+            
+            if [[ "${i: -4}" == ".txt" ]]; then
+                wget -qO "${2}.txt" ${remote}
+                wget_retval=$?
+            elif [[ "${i: -4}" == ".pdf" ]]; then
+                wget -qO "${2}.pdf" ${remote}
+                wget_retval=$?
+            elif [[ "${i: -4}" == "docx" ]]; then
+                wget -qO "${2}.docx" ${remote}
+                wget_retval=$?
+            else
+                echo "Extention non roconnue: ${i: -4}"
+            fi          
+            
+            if [[ "$wget_retval" == -1 ]]; then
+                echo "Téléchargement a échoué: ${remote}"
+                error="-1" #ERROR: failed page fetching
+            fi
+        fi
+    done
+    
+    return ${error}
+}
+
+#-
+# Hash the content of the last known version of a type of file
+# @arg1   File search parameter to pass to 'ls'
+# @arg2   Last known hash
+# @return '1' if found, 
+#         '0' if not found
+#-
+hashLastKnownVersion() {
+    local -n last_hash=$2 #passed by reference
+    files=($(ls ${1} 2> /dev/null))
+    
+    if (( ${?} > 0 )); then
+        return 0 #Not found
+    fi
+    
+    if [[ "${#files[@]}" -ne 0 ]]; then
+        #echo "DEBUG: Found ${#files[@]} files"
+        #echo "DEBUG: ${files[@]}"
+        
+        readarray -t sorted_files < <(printf '%s\0' "${files[@]}" | sort -rz | xargs -0n1)
+        last_hash=`cat ${sorted_files[0]} | sha256sum | awk {'print $1'}`
+        
+        #echo "DEBUG: Most recent file (${sorted_files[0]}) hash: ${last_hash}"
+        
+        return 1
+    fi
+    
+    return 0
+}
+
+#-
+# Fetches the information page
+# @arg1   (optional) Hash of the last known version of the html file on disk (empty=not found)
+# @return '-1' if fetching failed, 
+#         ' 0' if no changes detected, 
+#         ' 1' if first time download
+#         ' 2' if changes have been detected
+#-
+fetchInfoPage() {
+    #download the new HTML page
+    wget -qO ${info_page_filename} ${info_page_address}
+    wget_retval=$?
+
+    if [[ "$wget_retval" == -1 ]]; then
+        echo "Téléchargement de la page d'info a échoué."
+        return -1 #ERROR: failed page fetching
+    fi
+
+    #hash new content and compare it to previous version
+    if [[ -n "$1" ]]; then #previous hash passed as arg1
+        new_hash=`cat ${info_page_filename} | sha256sum | awk {'print $1'}`
+        if [[ "$1" == "$new_hash" ]]; then
+            echo "Pas de changement de la page d'information."
+            return 0; #no changes detected
+        else
+            echo "La page d'information a changer depuis le dernier telechargement."
+            return 2; #changes detected
+        fi
+    else
+        echo "Premièr téléchargement de la page d'info."
+        return 1; #no precious version so no changes to be detected
+    fi
+}
+
+#-
+# Fetches the "Attestation de deplacement" documents in the various formats (pdf/docx/txt)
+# @arg1   (optional) Hash of the last known version of the txt file on disk (empty=not found)
+# @return '-1' if fetching failed, 
+#         ' 0' if no changes detected, 
+#         ' 1' if first time download
+#         ' 2' if changes have been detected
+#-
+fetchAttestationDocs() {    
+    #Parse info page HTML to find the file links
+    declare -A fichiers_attestation
+    rx_attestation="\/sites.*?(attestation-deplacement-fr-)([\d]{8}.){1}(pdf|docx|txt)"
+    
+    mapfile -t paths < <( cat ${info_page_filename} | grep -oP ${rx_attestation} )
+
+    for i in "${paths[@]}"; do
+        hash=`echo $i | sha256sum`
+        fichiers_attestation[$hash]=$i
+    done
+
+    for i in "${fichiers_attestation[@]}"; do
+        if [[ "${i: -4}" == ".txt" ]]; then
+            attestation_txt_path=$i
+        fi
+    done
+    
+    if [[ "$attestation_txt_path" == "" ]]; then
+        echo "ERREUR: Lien de la version 'txt' de l'attestation n'a pas pu être parser."
+        return -1 #ERROR: failed link parsing from HTML
+    fi
+
+    #download the txt document
+    remote_txt="${document_domain_append}${attestation_txt_path}"
+    local_txt="${doc_attestation_base_filename}.txt"
+    
+    wget -qO ${local_txt} ${remote_txt}
+    wget_retval=$?
+
+    if [[ "$wget_retval" == -1 ]]; then
+        echo "Téléchargement de l'attestation de deplacement en format 'txt' a échoué."
+        return -1 #ERROR: failed document fetching
+    fi    
+    
+    #hash new content and compare it to previous version
+    if [[ -n "$1" ]]; then #previous hash passed as arg1
+        new_hash=`cat ${local_txt} | sha256sum | awk {'print $1'}`
+        
+        if [[ "$1" == "$new_hash" ]]; then
+            echo "Pas de changement de l'attestation de deplacement (txt)."
+            cleanup $local_txt
+            return 0; #no changes detected
+        else
+            echo "L'attestation de deplacement a changer depuis le dernier telechargement."
+            download fichiers_attestation ${doc_attestation_base_filename}
+            return 2; #changes detected
+        fi
+    else
+        echo "Premièr téléchargement de l'attestation de deplacement."
+        download fichiers_attestation ${doc_attestation_base_filename}
+        return 1; #no precious version so no changes to be detected
+    fi
+}
+
+#-
+# Fetches the "Justificatif de deplacement professionnel" documents in the various formats (pdf/docx/txt)
+# @arg1 (optional) Hash of the last known version of the txt file on disk (empty=not found)
+# @return '-1' if fetching failed, 
+#         ' 0' if no changes detected, 
+#         ' 1' if first time download
+#         ' 2' if changes have been detected
+#-
+fetchJustificatifDocs() {   
+    declare -A fichiers_justificatif
+    rx_justificatif="\/sites.*?(justificatif-deplacement-professionnel-fr).(pdf|docx|txt)"
+    
+    mapfile -t paths < <( cat ${info_page_filename} | grep -oP ${rx_justificatif} )
+
+    for i in "${paths[@]}"; do
+        hash=`echo $i | sha256sum`
+        fichiers_justificatif[$hash]=$i
+    done
+    
+    justificatif_txt_path=""
+    
+    for i in "${fichiers_justificatif[@]}"; do
+        if [[ "${i: -4}" == ".txt" ]]; then
+            justificatif_txt_path=$i
+        fi
+    done
+    
+    if [[ "$justificatif_txt_path" == "" ]]; then
+        echo "ERREUR: Lien de la version 'txt' du justificatif n'a pas pus être parser."
+    fi
+    
+    #download the txt document
+    remote_txt="${document_domain_append}${justificatif_txt_path}"
+    local_txt="${doc_justificatif_base_filename}.txt"
+    
+    wget -qO ${local_txt} ${remote_txt}
+    wget_retval=$?
+
+    if [[ "$wget_retval" == -1 ]]; then
+        echo "Téléchargement du justificatif de deplacement professionnel format 'txt' a échoué."
+        return -1 #ERROR: failed document fetching
+    fi    
+    
+    #hash new content and compare it to previous version
+    if [[ -n "$1" ]]; then #previous hash passed as arg1
+        new_hash=`cat ${local_txt} | sha256sum | awk {'print $1'}`
+        
+        if [[ "$1" == "$new_hash" ]]; then
+            echo "Pas de changement du justificatif de deplacement professionnel (txt)."
+            cleanup $local_txt
+            return 0; #no changes detected
+        else
+            echo "Le justificatif de deplacement professionnel a changer depuis le dernier telechargement."
+            download fichiers_justificatif ${doc_justificatif_base_filename}
+            return 2; #changes detected
+        fi
+    else
+        echo "Premièr téléchargement du justificatif de deplacement professionnel."
+        download fichiers_justificatif ${doc_justificatif_base_filename}
+        return 1; #no previous version so no changes to be detected
+    fi
+}
+
+# RUN SECTION OF THE SCRIPT! #
+
+most_recent_info_page_hash=""
+hashLastKnownVersion "*.html" most_recent_info_page_hash
+fetchInfoPage $most_recent_info_page_hash
+fetchInfoPage_retval=$?
+
+most_recent_attestation_hash=""
+hashLastKnownVersion "attestation-deplacement-fr*.txt" most_recent_attestation_hash
+fetchAttestationDocs $most_recent_attestation_hash
+fetchAttestationDocs_retval=$?
+
+most_recent_justificatif_hash=""
+hashLastKnownVersion "justificatif-professionnel-fr*.txt" most_recent_justificatif_hash
+fetchJustificatifDocs $most_recent_justificatif_hash
+fetchJustificatifDocs_retval=$?
+
+# CLEANUP
+if [[ "$fetchInfoPage_retval" == 0 ]]; then
+    cleanup $info_page_filename
+fi
+
+
+
+
+
+
+
