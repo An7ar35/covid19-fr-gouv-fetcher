@@ -113,6 +113,7 @@ hashLastKnownVersion() {
 #-
 fetchInfoPage() {
     #download the new HTML page
+    echo "Téléchargement de la page d'info: ${info_page_address}"
     wget -qO ${info_page_filename} ${info_page_address}
     wget_retval=$?
 
@@ -148,7 +149,7 @@ fetchInfoPage() {
 fetchAttestationDocs() {    
     #Parse info page HTML to find the file links
     declare -A fichiers_attestation
-    rx_attestation="\/sites.*?(attestation-deplacement-fr-)([\d]{8}.){1}(pdf|docx|txt)"
+    rx_attestation="(?:\/sites\/default\/files\/cfiles\/attestation-deplacement-fr-)[\d]{8}\.(pdf|docx|txt)"
     
     mapfile -t paths < <( cat ${info_page_filename} | grep -oP ${rx_attestation} )
 
@@ -172,6 +173,7 @@ fetchAttestationDocs() {
     remote_txt="${document_domain_append}${attestation_txt_path}"
     local_txt="${doc_attestation_base_filename}.txt"
     
+    echo "Téléchargement de l'attestation de deplacement: ${remote_txt}"
     wget -qO ${local_txt} ${remote_txt}
     wget_retval=$?
 
@@ -210,7 +212,7 @@ fetchAttestationDocs() {
 #-
 fetchJustificatifDocs() {   
     declare -A fichiers_justificatif
-    rx_justificatif="\/sites.*?(justificatif-deplacement-professionnel-fr).(pdf|docx|txt)"
+    rx_justificatif="(?:\/sites\/default\/files\/cfiles\/justificatif-deplacement-professionnel-fr)\.(pdf|docx|txt)"
     
     mapfile -t paths < <( cat ${info_page_filename} | grep -oP ${rx_justificatif} )
 
@@ -235,6 +237,7 @@ fetchJustificatifDocs() {
     remote_txt="${document_domain_append}${justificatif_txt_path}"
     local_txt="${doc_justificatif_base_filename}.txt"
     
+    echo "Téléchargement du justificatif de deplacement professionnel: ${remote_txt}"
     wget -qO ${local_txt} ${remote_txt}
     wget_retval=$?
 
