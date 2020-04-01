@@ -212,7 +212,7 @@ fetchAttestationDocs() {
 #-
 fetchJustificatifDocs() {   
     declare -A fichiers_justificatif
-    rx_justificatif="(?:\/sites\/default\/files\/cfiles\/justificatif-deplacement-professionnel-fr)\.(pdf|docx|txt)"
+    rx_justificatif="(?:\/sites\/default\/files\/cfiles\/justificatif-deplacement-professionnel-fr_)[\d]{8}\.(pdf|docx|txt)"
     
     mapfile -t paths < <( cat ${info_page_filename} | grep -oP ${rx_justificatif} )
 
