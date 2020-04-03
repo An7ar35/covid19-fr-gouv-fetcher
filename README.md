@@ -11,6 +11,8 @@ A cron-job or adding version control actions to the script is possible if you ca
 Stay safe people.
 
 Instruction: Just clone the repo and run the `fetch.sh` script from within. You could also make a cron job so that it does it regularly (every 6h for example).
+
+*Update*: I've added my daily snapshots (`/snapshots`) of the different scraped files for archival and historical value.
  
 ### FR
 
@@ -24,3 +26,5 @@ Un cron-job ou l'ajout d'actions `git` au script est possible si vous souhaitez 
 Restez tous en bonne santé.
 
 Instruction: il suffit de cloner le "repo" et d'exécuter le script `fetch.sh` dans le dossier. Vous pouvez également faire un cron job pour qu'il le fasse régulièrement (toutes les 6h par exemple).
+
+*Mise à jour*: j'ai ajouté mes instantanés quotidiens (`/snapshots`) des différents fichiers récupérés à des fins d'archivage et d'historique.
