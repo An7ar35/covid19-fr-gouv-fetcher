@@ -24,13 +24,26 @@ info_page_filename="info-coronavirus_${date}_${time}.html"
 doc_attestation_base_filename="attestation-deplacement-fr_${date}_${time}"
 doc_justificatif_base_filename="justificatif-professionnel-fr_${date}_${time}"
 
+#colours!
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+ORANGE='\033[0;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m' # reset
+
+#INFO BOX
+INFO="${BLUE}[?]${NC}"
+CHANGE="${GREEN}[+]${NC}"
+NOCHANGE="${CYAN}[-]${NC}"
+ERROR="${RED}[!]${NC}"
 
 #-
 # Removes file from disk
 # @arg1 file path
 #-
 cleanup() {
-    echo "[INFO] Cleaning up ${1} from disk..."
+    printf "${INFO} Cleaning up ${1} from disk...\n"
     rm ${1}
 }
 
@@ -48,7 +61,7 @@ download() {
         if [[ ! -f "$i" ]]; then
             wget_retval=""
             remote="${document_domain_append}${i}"
-            echo "Téléchargement: ${remote}"
+            printf "Téléchargement: ${remote}\n"
             
             if [[ "${i: -4}" == ".txt" ]]; then
                 wget -qO "${2}.txt" ${remote}
@@ -60,11 +73,11 @@ download() {
                 wget -qO "${2}.docx" ${remote}
                 wget_retval=$?
             else
-                echo "Extention non roconnue: ${i: -4}"
+                printf "${ERROR} Extention non roconnue: ${i: -4}\n"
             fi          
             
             if [[ "$wget_retval" == -1 ]]; then
-                echo "Téléchargement a échoué: ${remote}"
+                printf "${ERROR} Téléchargement a échoué: ${remote}\n"
                 error="-1" #ERROR: failed page fetching
             fi
         fi
@@ -113,12 +126,12 @@ hashLastKnownVersion() {
 #-
 fetchInfoPage() {
     #download the new HTML page
-    echo "Téléchargement de la page d'info: ${info_page_address}"
+    printf "${INFO} Téléchargement de la page d'info: ${info_page_address}\n"
     wget -qO ${info_page_filename} ${info_page_address}
     wget_retval=$?
 
     if [[ "$wget_retval" == -1 ]]; then
-        echo "Téléchargement de la page d'info a échoué."
+        printf "${ERROR} Téléchargement de la page d'info a échoué.\n"
         return -1 #ERROR: failed page fetching
     fi
 
@@ -126,14 +139,14 @@ fetchInfoPage() {
     if [[ -n "$1" ]]; then #previous hash passed as arg1
         new_hash=`cat ${info_page_filename} | sha256sum | awk {'print $1'}`
         if [[ "$1" == "$new_hash" ]]; then
-            echo "Pas de changement de la page d'information."
+            printf "${NOCHANGE} Pas de changement de la page d'information.\n"
             return 0; #no changes detected
         else
-            echo "La page d'information a changer depuis le dernier telechargement."
+            printf "${CHANGE} La page d'information a changer depuis le dernier telechargement.\n"
             return 2; #changes detected
         fi
     else
-        echo "Premièr téléchargement de la page d'info."
+        printf "${CHANGE} Premièr téléchargement de la page d'info.\n"
         return 1; #no precious version so no changes to be detected
     fi
 }
@@ -165,7 +178,7 @@ fetchAttestationDocs() {
     done
     
     if [[ "$attestation_txt_path" == "" ]]; then
-        echo "ERREUR: Lien de la version 'txt' de l'attestation n'a pas pu être parser."
+        printf "${ERROR} Lien de la version 'txt' de l'attestation n'a pas pu être parser.\n"
         return -1 #ERROR: failed link parsing from HTML
     fi
 
@@ -173,12 +186,12 @@ fetchAttestationDocs() {
     remote_txt="${document_domain_append}${attestation_txt_path}"
     local_txt="${doc_attestation_base_filename}.txt"
     
-    echo "Téléchargement de l'attestation de deplacement: ${remote_txt}"
+    printf "${INFO} Téléchargement de l'attestation de deplacement: ${remote_txt}\n"
     wget -qO ${local_txt} ${remote_txt}
     wget_retval=$?
 
     if [[ "$wget_retval" == -1 ]]; then
-        echo "Téléchargement de l'attestation de deplacement en format 'txt' a échoué."
+        printf "${ERROR} Téléchargement de l'attestation de deplacement en format 'txt' a échoué.\n"
         return -1 #ERROR: failed document fetching
     fi    
     
@@ -187,16 +200,16 @@ fetchAttestationDocs() {
         new_hash=`cat ${local_txt} | sha256sum | awk {'print $1'}`
         
         if [[ "$1" == "$new_hash" ]]; then
-            echo "Pas de changement de l'attestation de deplacement (txt)."
+            printf "${NOCHANGE} Pas de changement de l'attestation de deplacement (txt).\n"
             cleanup $local_txt
             return 0; #no changes detected
         else
-            echo "L'attestation de deplacement a changer depuis le dernier telechargement."
+            printf "${CHANGE} L'attestation de deplacement a changer depuis le dernier telechargement.\n"
             download fichiers_attestation ${doc_attestation_base_filename}
             return 2; #changes detected
         fi
     else
-        echo "Premièr téléchargement de l'attestation de deplacement."
+        printf "${CHANGE} Premièr téléchargement de l'attestation de deplacement.\n"
         download fichiers_attestation ${doc_attestation_base_filename}
         return 1; #no precious version so no changes to be detected
     fi
@@ -230,19 +243,19 @@ fetchJustificatifDocs() {
     done
     
     if [[ "$justificatif_txt_path" == "" ]]; then
-        echo "ERREUR: Lien de la version 'txt' du justificatif n'a pas pus être parser."
+        printf "${ERROR} Lien de la version 'txt' du justificatif n'a pas pus être parser.\n"
     fi
     
     #download the txt document
     remote_txt="${document_domain_append}${justificatif_txt_path}"
     local_txt="${doc_justificatif_base_filename}.txt"
     
-    echo "Téléchargement du justificatif de deplacement professionnel: ${remote_txt}"
+    printf "${INFO} Téléchargement du justificatif de deplacement professionnel: ${remote_txt}\n"
     wget -qO ${local_txt} ${remote_txt}
     wget_retval=$?
 
     if [[ "$wget_retval" == -1 ]]; then
-        echo "Téléchargement du justificatif de deplacement professionnel format 'txt' a échoué."
+        printf "${ERROR} Téléchargement du justificatif de deplacement professionnel format 'txt' a échoué.\n"
         return -1 #ERROR: failed document fetching
     fi    
     
@@ -251,23 +264,154 @@ fetchJustificatifDocs() {
         new_hash=`cat ${local_txt} | sha256sum | awk {'print $1'}`
         
         if [[ "$1" == "$new_hash" ]]; then
-            echo "Pas de changement du justificatif de deplacement professionnel (txt)."
+            printf "${NOCHANGE} Pas de changement du justificatif de deplacement professionnel (txt).\n"
             cleanup $local_txt
             return 0; #no changes detected
         else
-            echo "Le justificatif de deplacement professionnel a changer depuis le dernier telechargement."
+            printf "${CHANGE} Le justificatif de deplacement professionnel a changer depuis le dernier telechargement.\n"
             download fichiers_justificatif ${doc_justificatif_base_filename}
             return 2; #changes detected
         fi
     else
-        echo "Premièr téléchargement du justificatif de deplacement professionnel."
+        printf "${CHANGE} Premièr téléchargement du justificatif de deplacement professionnel.\n"
         download fichiers_justificatif ${doc_justificatif_base_filename}
         return 1; #no previous version so no changes to be detected
     fi
 }
 
-# RUN SECTION OF THE SCRIPT! #
+#-
+# Fetches the "Attestation pour un déplacement dérogatoire de la France métropolitaine vers l'Outre-mer" PDF document
+# @return '-1' if fetching failed, 
+#         ' 0' if no changes detected, 
+#         ' 1' if first time download
+#         ' 2' if changes have been detected
+#-
+fetchTravelAttestation1() {
+    filename="attestation-om-depuis-la-metropole.pdf"
+    old_hash=""
+    new_hash=""
+    rx="(?:https:\/\/www\.interieur\.gouv\.fr\/content\/download\/)([\d]+\/[\d]+\/)file\/([\d-]*Attestation-om-depuis-la-metropole)\.(?=pdf)"
+    
+    if [[ -f "$filename" ]]; then
+        old_hash=`sha256sum "$filename" | awk {'print $1'}`  
+    fi
 
+    remote=`cat ${info_page_filename} | grep -oP ${rx}`
+    
+    printf "${INFO} Téléchargement de l'attestation pour un déplacement dérogatoire de la France métropolitaine vers l'Outre-mer: ${filename}\n"
+    wget -qO ${filename} ${remote}
+    wget_retval=$?
+    
+    if [[ "$wget_retval" == -1 ]]; then
+        printf "${ERROR} Téléchargement de l'attestation pour un déplacement dérogatoire de la France métropolitaine vers l'Outre-mer en format 'pdf' a échoué.\n"
+        return -1 #ERROR: failed document fetching
+    fi
+    
+    if [[ ! -n "$old_hash" ]]; then
+        printf "${CHANGE} Premièr téléchargement de attestation pour un déplacement dérogatoire de la France métropolitaine vers l'Outre-mer.\n"
+        return 1; #first download
+    fi
+    
+    new_hash=`sha256sum "$filename" | awk {'print $1'}`
+    
+    if [[ "$old_hash" = "$new_hash" ]]; then
+        printf "${NOCHANGE} Pas de changement de l'attestation pour un déplacement dérogatoire de la France métropolitaine vers l'Outre-mer.\n"
+        return 0; #no changes detected
+    else
+        printf "${CHANGE} L'attestation pour un déplacement dérogatoire de la France métropolitaine vers l'Outre-mer a changer depuis le dernier telechargement.\n"
+        return 2; #changes detected
+    fi    
+}
+
+#-
+# Fetches the "Attestation pour un voyage international depuis l'étranger vers la France métropolitaine" PDF document
+# @return '-1' if fetching failed, 
+#         ' 0' if no changes detected, 
+#         ' 1' if first time download
+#         ' 2' if changes have been detected
+#-
+fetchTravelAttestation2() {    
+    filename="attestation-etranger-metropole-fr.pdf"
+    old_hash=""
+    new_hash=""
+    rx="(?:https:\/\/www\.interieur\.gouv\.fr\/content\/download\/)([\d]+\/[\d]+\/)file\/([\d-]*Attestation-etranger-metropole-FR)\.(?=pdf)"
+    
+    if [[ -f "$filename" ]]; then
+        old_hash=`sha256sum "$filename" | awk {'print $1'}`  
+    fi
+
+    remote=`cat ${info_page_filename} | grep -oP ${rx}`
+    
+    printf "${INFO} Téléchargement de l'attestation pour un voyage international depuis l'étranger vers la France métropolitaine: ${filename}\n"
+    wget -qO ${filename} ${remote}
+    wget_retval=$?
+    
+    if [[ "$wget_retval" == -1 ]]; then
+        printf "Téléchargement de l'attestation pour un voyage international depuis l'étranger vers la France métropolitaine 'pdf' a échoué.\n"
+        return -1 #ERROR: failed document fetching
+    fi
+    
+    if [[ ! -n "$old_hash" ]]; then
+        printf "${CHANGE} Premièr téléchargement de l'attestation pour un voyage international depuis l'étranger vers la France métropolitaine.\n"
+        return 1; #first download
+    fi
+    
+    new_hash=`sha256sum "$filename" | awk {'print $1'}`
+    
+    if [[ "$old_hash" = "$new_hash" ]]; then
+        printf "${NOCHANGE} Pas de changement de l'attestation pour un déplacement dérogatoire de la France métropolitaine vers l'Outre-mer.\n"
+        return 0; #no changes detected
+    else
+        printf "${CHANGE} L'attestation pour un voyage international depuis l'étranger vers la France métropolitaine a changer depuis le dernier telechargement.\n"
+        return 2; #changes detected
+    fi    
+}
+
+#-
+# Fetches the "Attestation pour un voyage international depuis l'étranger vers une collectivité d'Outre-mer" PDF document
+# @return '-1' if fetching failed, 
+#         ' 0' if no changes detected, 
+#         ' 1' if first time download
+#         ' 2' if changes have been detected
+#-
+fetchTravelAttestation3() {
+    filename="attestation-outre-mer-depuis-l-etranger.pdf"
+    old_hash=""
+    new_hash=""
+    rx="(?:https:\/\/www\.interieur\.gouv\.fr\/content\/download\/)([\d]+\/[\d]+\/)file\/([\d-]*Attestation-outre-mer-depuis-l-etranger)\.(?=pdf)"
+    
+    if [[ -f "$filename" ]]; then
+        old_hash=`sha256sum "$filename" | awk {'print $1'}`  
+    fi
+
+    remote=`cat ${info_page_filename} | grep -oP ${rx}`
+    
+    printf "${INFO} Téléchargement de l'attestation pour un voyage international depuis l'étranger vers une collectivité d'Outre-mer: ${filename}\n"
+    wget -qO ${filename} ${remote}
+    wget_retval=$?
+    
+    if [[ "$wget_retval" == -1 ]]; then
+        printf "${ERROR} Téléchargement de l'attestation pour un voyage international depuis l'étranger vers une collectivité d'Outre-mer 'pdf' a échoué.\n"
+        return -1 #ERROR: failed document fetching
+    fi
+    
+    if [[ ! -n "$old_hash" ]]; then
+        printf "${CHANGE} Premièr téléchargement de l'attestation pour un voyage international depuis l'étranger vers une collectivité d'Outre-mer.\n"
+        return 1; #first download
+    fi
+    
+    new_hash=`sha256sum "$filename" | awk {'print $1'}`
+    
+    if [[ "$old_hash" = "$new_hash" ]]; then
+        printf "${NOCHANGE} Pas de changement de l'attestation pour un voyage international depuis l'étranger vers une collectivité d'Outre-mer.\n"
+        return 0; #no changes detected
+    else
+        printf "${CHANGE} L'attestation pour un voyage international depuis l'étranger vers une collectivité d'Outre-mer a changer depuis le dernier telechargement.\n"
+        return 2; #changes detected
+    fi    
+}
+
+# RUN SECTION OF THE SCRIPT! #
 most_recent_info_page_hash=""
 hashLastKnownVersion "*.html" most_recent_info_page_hash
 fetchInfoPage $most_recent_info_page_hash
@@ -282,6 +426,13 @@ most_recent_justificatif_hash=""
 hashLastKnownVersion "justificatif-professionnel-fr*.txt" most_recent_justificatif_hash
 fetchJustificatifDocs $most_recent_justificatif_hash
 fetchJustificatifDocs_retval=$?
+
+fetchTravelAttestation1
+fetchTravelAttestation1_retval=$?
+fetchTravelAttestation2
+fetchTravelAttestation2_retval=$?
+fetchTravelAttestation3
+fetchTravelAttestation3_retval=$?
 
 # CLEANUP
 if [[ "$fetchInfoPage_retval" == 0 ]]; then
