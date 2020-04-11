@@ -61,16 +61,16 @@ download() {
         if [[ ! -f "$i" ]]; then
             wget_retval=""
             remote="${document_domain_append}${i}"
-            printf "Téléchargement: ${remote}\n"
+            printf "${INFO} Téléchargement: ${remote}\n"
             
             if [[ "${i: -4}" == ".txt" ]]; then
                 wget -qO "${2}.txt" ${remote}
                 wget_retval=$?
             elif [[ "${i: -4}" == ".pdf" ]]; then
-                wget -qO "${2}.pdf" ${remote}
+                wget -qO "${2}.pdf.gz" ${remote}
                 wget_retval=$?
             elif [[ "${i: -4}" == "docx" ]]; then
-                wget -qO "${2}.docx" ${remote}
+                wget -qO "${2}.docx.gz" ${remote}
                 wget_retval=$?
             else
                 printf "${ERROR} Extention non roconnue: ${i: -4}\n"
