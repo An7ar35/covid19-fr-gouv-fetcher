@@ -23,6 +23,8 @@ document_domain_append="https://www.gouvernement.fr"
 info_page_filename="info-coronavirus_${date}_${time}.html"
 doc_attestation_base_filename="attestation-deplacement-fr_${date}_${time}"
 doc_justificatif_base_filename="justificatif-professionnel-fr_${date}_${time}"
+deconfinement_page_address="https://www.gouvernement.fr/info-coronavirus/strategie-de-deconfinement"
+deconfinement_page_filename="strategie-de-deconfinement_${date}_${time}.html"
 
 #colours!
 RED='\033[0;31m'
@@ -411,11 +413,51 @@ fetchTravelAttestation3() {
     fi    
 }
 
+#-
+# Fetches the 'Strategie de Deconfinement' page
+# @arg1   (optional) Hash of the last known version of the html file on disk (empty=not found)
+# @return '-1' if fetching failed, 
+#         ' 0' if no changes detected, 
+#         ' 1' if first time download
+#         ' 2' if changes have been detected
+#-
+fetchDeconfinementPage() {
+    #download the new HTML page
+    printf "${INFO} Téléchargement de la page de strategie de deconfinement: ${deconfinement_page_address}\n"
+    wget -qO ${deconfinement_page_filename} ${deconfinement_page_address}
+    wget_retval=$?
+
+    if [[ "$wget_retval" == -1 ]]; then
+        printf "${ERROR} Téléchargement de la page de strategie de deconfinement a échoué.\n"
+        return -1 #ERROR: failed page fetching
+    fi
+
+    #hash new content and compare it to previous version
+    if [[ -n "$1" ]]; then #previous hash passed as arg1
+        new_hash=`cat ${deconfinement_page_filename} | sha256sum | awk {'print $1'}`
+        if [[ "$1" == "$new_hash" ]]; then
+            printf "${NOCHANGE} Pas de changement de la page de strategie de deconfinement.\n"
+            return 0; #no changes detected
+        else
+            printf "${CHANGE} La page de strategie de deconfinement a changer depuis le dernier telechargement.\n"
+            return 2; #changes detected
+        fi
+    else
+        printf "${CHANGE} Premièr téléchargement de la page de strategie de deconfinement.\n"
+        return 1; #no precious version so no changes to be detected
+    fi
+}
+
 # RUN SECTION OF THE SCRIPT! #
 most_recent_info_page_hash=""
-hashLastKnownVersion "*.html" most_recent_info_page_hash
+hashLastKnownVersion "info-coronavirus*.html" most_recent_info_page_hash
 fetchInfoPage $most_recent_info_page_hash
 fetchInfoPage_retval=$?
+
+most_recent_deconfinement_page_hash=""
+hashLastKnownVersion "strategie-de-deconfinement*.html" most_recent_deconfinement_page_hash
+fetchDeconfinementPage $most_recent_deconfinement_page_hash
+fetchDeconfinementPage_retval=$?
 
 most_recent_attestation_hash=""
 hashLastKnownVersion "attestation-deplacement-fr*.txt" most_recent_attestation_hash
@@ -437,6 +479,10 @@ fetchTravelAttestation3_retval=$?
 # CLEANUP
 if [[ "$fetchInfoPage_retval" == 0 ]]; then
     cleanup $info_page_filename
+fi
+
+if [[ "$fetchDeconfinementPage_retval" == 0 ]]; then
+    cleanup $deconfinement_page_filename
 fi
 
 
