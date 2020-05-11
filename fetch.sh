@@ -459,15 +459,15 @@ hashLastKnownVersion "strategie-de-deconfinement*.html" most_recent_deconfinemen
 fetchDeconfinementPage $most_recent_deconfinement_page_hash
 fetchDeconfinementPage_retval=$?
 
-most_recent_attestation_hash=""
-hashLastKnownVersion "attestation-deplacement-fr*.txt" most_recent_attestation_hash
-fetchAttestationDocs $most_recent_attestation_hash
-fetchAttestationDocs_retval=$?
+#most_recent_attestation_hash=""
+#hashLastKnownVersion "attestation-deplacement-fr*.txt" most_recent_attestation_hash
+#fetchAttestationDocs $most_recent_attestation_hash
+#fetchAttestationDocs_retval=$?
 
-most_recent_justificatif_hash=""
-hashLastKnownVersion "justificatif-professionnel-fr*.txt" most_recent_justificatif_hash
-fetchJustificatifDocs $most_recent_justificatif_hash
-fetchJustificatifDocs_retval=$?
+#most_recent_justificatif_hash=""
+#hashLastKnownVersion "justificatif-professionnel-fr*.txt" most_recent_justificatif_hash
+#fetchJustificatifDocs $most_recent_justificatif_hash
+#fetchJustificatifDocs_retval=$?
 
 fetchTravelAttestation1
 fetchTravelAttestation1_retval=$?
