@@ -469,12 +469,12 @@ fetchDeconfinementPage_retval=$?
 #fetchJustificatifDocs $most_recent_justificatif_hash
 #fetchJustificatifDocs_retval=$?
 
-fetchTravelAttestation1
-fetchTravelAttestation1_retval=$?
-fetchTravelAttestation2
-fetchTravelAttestation2_retval=$?
-fetchTravelAttestation3
-fetchTravelAttestation3_retval=$?
+#fetchTravelAttestation1
+#fetchTravelAttestation1_retval=$?
+#fetchTravelAttestation2
+#fetchTravelAttestation2_retval=$?
+#fetchTravelAttestation3
+#fetchTravelAttestation3_retval=$?
 
 # CLEANUP
 if [[ "$fetchInfoPage_retval" == 0 ]]; then
