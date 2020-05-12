@@ -25,6 +25,7 @@ doc_attestation_base_filename="attestation-deplacement-fr_${date}_${time}"
 doc_justificatif_base_filename="justificatif-professionnel-fr_${date}_${time}"
 deconfinement_page_address="https://www.gouvernement.fr/info-coronavirus/strategie-de-deconfinement"
 deconfinement_page_filename="strategie-de-deconfinement_${date}_${time}.html"
+ressources_a_partager_page_address="https://www.gouvernement.fr/info-coronavirus/ressources-a-partager" #for the +100Km travels
 
 #colours!
 RED='\033[0;31m'
@@ -448,6 +449,57 @@ fetchDeconfinementPage() {
     fi
 }
 
+#-
+# Fetches the 'Déclaration de déplacement +100Km' PDF document
+# @arg1   (optional) Hash of the last known version of the html file on disk (empty=not found)
+# @return '-1' if fetching failed, 
+#         ' 0' if no changes detected, 
+#         ' 1' if first time download
+#         ' 2' if changes have been detected
+#-
+fetchOver100KmTravelForm() {
+    filename="declaration-deplacement-fr-pdf.pdf.gz"
+    old_hash=""
+    new_hash=""
+    rx="(?:https:\/\/www\.gouvernement\.fr\/sites\/default\/files\/)([\d-]*declaration-deplacement-fr-pdf.pdf)"
+    
+    if [[ -f "$filename" ]]; then
+        old_hash=`sha256sum "$filename" | awk {'print $1'}`  
+    fi
+
+    src_page=$(wget -qO- ${ressources_a_partager_page_address})
+    if [[ "$?" == -1 ]]; then
+        printf "${ERROR} Téléchargement de la page de resources a partager a échoué (pour télécharger la déclaration de déplacement +100Km).\n"
+        return -1 #ERROR: source page for the form failed to download
+    fi
+    
+    remote=`echo ${src_page} | grep -oP ${rx}`
+    
+    printf "${INFO} Téléchargement de la déclaration de déplacement +100Km: ${filename}\n"
+    wget -qO ${filename} ${remote}
+    wget_retval=$?
+    
+    if [[ "$wget_retval" == -1 ]]; then
+        printf "${ERROR} Téléchargement de la déclaration de déplacement +100Km 'pdf' a échoué.\n"
+        return -1 #ERROR: failed document fetching
+    fi
+    
+    if [[ ! -n "$old_hash" ]]; then
+        printf "${CHANGE} Premièr téléchargement de la déclaration de déplacement +100Km.\n"
+        return 1; #first download
+    fi
+    
+    new_hash=`sha256sum "$filename" | awk {'print $1'}`
+    
+    if [[ "$old_hash" = "$new_hash" ]]; then
+        printf "${NOCHANGE} Pas de changement de la déclaration de déplacement +100Km.\n"
+        return 0; #no changes detected
+    else
+        printf "${CHANGE} de la déclaration de déplacement +100Km a changer depuis le dernier telechargement.\n"
+        return 2; #changes detected
+    fi    
+}
+
 # RUN SECTION OF THE SCRIPT! #
 most_recent_info_page_hash=""
 hashLastKnownVersion "info-coronavirus*.html" most_recent_info_page_hash
@@ -475,6 +527,8 @@ fetchDeconfinementPage_retval=$?
 #fetchTravelAttestation2_retval=$?
 #fetchTravelAttestation3
 #fetchTravelAttestation3_retval=$?
+fetchOver100KmTravelForm
+fetchOver100KmTravelForm_retval=$?
 
 # CLEANUP
 if [[ "$fetchInfoPage_retval" == 0 ]]; then
