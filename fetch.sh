@@ -461,7 +461,7 @@ fetchOver100KmTravelForm() {
     filename="declaration-deplacement-fr-pdf.pdf.gz"
     old_hash=""
     new_hash=""
-    rx="(?:https:\/\/www\.gouvernement\.fr\/sites\/default\/files\/)([\d-]*declaration-deplacement-fr-pdf.pdf)"
+    rx="(?:https:\/\/www\.gouvernement\.fr\/sites\/default\/files\/)([\d-]*declaration-de-deplacement-fr.pdf)"
     
     if [[ -f "$filename" ]]; then
         old_hash=`sha256sum "$filename" | awk {'print $1'}`  
@@ -495,7 +495,7 @@ fetchOver100KmTravelForm() {
         printf "${NOCHANGE} Pas de changement de la déclaration de déplacement +100Km.\n"
         return 0; #no changes detected
     else
-        printf "${CHANGE} de la déclaration de déplacement +100Km a changer depuis le dernier telechargement.\n"
+        printf "${CHANGE} La déclaration de déplacement +100Km a changer depuis le dernier telechargement.\n"
         return 2; #changes detected
     fi    
 }
