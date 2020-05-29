@@ -506,10 +506,10 @@ hashLastKnownVersion "info-coronavirus*.html" most_recent_info_page_hash
 fetchInfoPage $most_recent_info_page_hash
 fetchInfoPage_retval=$?
 
-most_recent_deconfinement_page_hash=""
-hashLastKnownVersion "strategie-de-deconfinement*.html" most_recent_deconfinement_page_hash
-fetchDeconfinementPage $most_recent_deconfinement_page_hash
-fetchDeconfinementPage_retval=$?
+#most_recent_deconfinement_page_hash=""
+#hashLastKnownVersion "strategie-de-deconfinement*.html" most_recent_deconfinement_page_hash
+#fetchDeconfinementPage $most_recent_deconfinement_page_hash
+#fetchDeconfinementPage_retval=$?
 
 #most_recent_attestation_hash=""
 #hashLastKnownVersion "attestation-deplacement-fr*.txt" most_recent_attestation_hash
