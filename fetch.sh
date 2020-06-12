@@ -527,17 +527,17 @@ fetchInfoPage_retval=$?
 #fetchTravelAttestation2_retval=$?
 #fetchTravelAttestation3
 #fetchTravelAttestation3_retval=$?
-fetchOver100KmTravelForm
-fetchOver100KmTravelForm_retval=$?
+#fetchOver100KmTravelForm
+#fetchOver100KmTravelForm_retval=$?
 
 # CLEANUP
 if [[ "$fetchInfoPage_retval" == 0 ]]; then
     cleanup $info_page_filename
 fi
 
-if [[ "$fetchDeconfinementPage_retval" == 0 ]]; then
-    cleanup $deconfinement_page_filename
-fi
+#if [[ "$fetchDeconfinementPage_retval" == 0 ]]; then
+#    cleanup $deconfinement_page_filename
+#fi
 
 
 
